@@ -1,0 +1,34 @@
+{
+    "name": "code16/responder",
+    "description": "Generic API response handler for Laravel framework",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rémi Collin",
+            "email": "remi@code16.fr"
+        }
+    ],
+    "require": {
+        "illuminate/support": "5.5.*",
+        "illuminate/http": "5.5.*",
+        "illuminate/contracts": "5.5.*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~6.0",
+        "orchestra/testbench": "~3.5",
+        "fzaninotto/faker": "~1.4",
+        "ramsey/uuid": "^3.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Code16\\Responder\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Code16\\Responder\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
