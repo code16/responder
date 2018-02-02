@@ -2,7 +2,6 @@
 
 namespace Code16\Responder\Tests\Stubs\Actions;
 
-use Code16\Responder\Tests\Stubs\Planet;
 use Code16\Responder\Tests\Stubs\Generators\PlanetGenerator;
 
 class ShowPlanet
@@ -14,7 +13,7 @@ class ShowPlanet
         $this->planetGenerator = $planetGenerator;
     }
 
-    public function show($id) : Planet
+    public function execute($id)
     {
         $planet = $this->planetGenerator->generate();
         $planet->id = $id;

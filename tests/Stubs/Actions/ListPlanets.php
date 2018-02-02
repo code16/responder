@@ -42,7 +42,9 @@ class ListPlanets implements HasPagination
 
     protected function returnAsPaginator()
     {   
-        $planets = $this->generatePlanets($this->pageSize);
+        $planets = new Collection($this->generatePlanets($this->pageSize));
+
+        return new LengthAwarePaginator($planets, count($planets) * 5, $this->pageSize);
     }
 
     protected function generatePlanets(int $number) : array

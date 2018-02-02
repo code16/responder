@@ -16,7 +16,7 @@ class ResponderFactory
 
     public function __construct(Request $request)
     {
-        $this->$request = $request;
+        $this->request = $request;
     }
 
     public function json($action = null) : Responsable

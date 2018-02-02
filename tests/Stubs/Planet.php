@@ -3,8 +3,9 @@
 namespace Code16\Responder\Tests\Stubs;
 
 use Ramsey\Uuid\Uuid;
+use Illuminate\Contracts\Support\Arrayable;
 
-class Planet
+class Planet implements Arrayable
 {
     public $id;
 
@@ -18,7 +19,17 @@ class Planet
     
     public function __construct()
     {
-        $this->id = Uuid::uuid1();
+        $this->id = Uuid::uuid1()->toString();
     }
 
+    public function toArray()
+    {
+        return [
+            "id" => $this->id,
+            "name" => $this->name,
+            "mass" => $this->mass,
+            "distance" => $this->distance,
+            "discovered_at" => $this->discovered_at->toIso8601String(),
+        ];  
+    }
 }

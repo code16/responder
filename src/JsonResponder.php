@@ -4,14 +4,16 @@ namespace Code16\Responder;
 
 use Exception;
 use JsonSerializable;
-use Code16\Responder\ResponderException;
+use Code16\Responder\Exceptions\ResponderException;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\Resource;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Collection;
+use Code16\Responder\ArrayWrapper;
 
 class JsonResponder implements Responsable
 {
@@ -88,9 +90,10 @@ class JsonResponder implements Responsable
     }
 
     /**
-     * Call the action and return the response
+     * Call the action and return the response as 
+     * a laravel resource
      * 
-     * @return JsonResponse
+     * @return Resource|JsonResponse
      */
     public function toResponse($request)
     {
@@ -113,15 +116,14 @@ class JsonResponder implements Responsable
             }
             
             return $this->setStatusCode($code)->respondWithError($e->getMessage());
-        }
-
-        return $this->handlePayload($payload);
+        }   
         
+        return $this->handlePayload($payload);
     }
 
     protected function handlePayload($payload)
     {
-        return is_array($payload) ? $this->buildResponse($payload) : $this->buildResponse($this->transform($payload));
+        return $payload instanceof Resource ? $this->buildResponse($payload) : $this->buildResponse($this->intoResource($payload));
     }
 
     /**
@@ -136,23 +138,34 @@ class JsonResponder implements Responsable
     }
 
     /**
-     * Use a transformer instance to process the payload return by the handler
+     * Use any available transformation method to process 
+     * the payload returned by the handler.
      * 
      * @param  mixed $payload
      * @return Illuminate\Http\Json\Resource
      */
-    protected function transform($payload) : array
+    protected function intoResource($payload) : Resource
     {
+        // Transformer are intended to singular resources,
+        // so what to do with collections
         if ($this->transformer !== null) {
             return $this->transformer->transform($payload);
         }
 
+        if($payload instanceof Collection || $payload instanceof AbstractPaginator) {
+            return new Resource($payload);
+        }
+
         if($payload instanceof Arrayable) {
-            return $payload->toArray();
+            return new Resource($payload);
+        }
+        
+        if(is_array($payload)) {
+            return new Resource(new ArrayWrapper($payload));
         }
         
         if($payload instanceof JsonSerialize) {
-            return $payload->jsonSerialize();
+            return new Resource($payload);
         }
 
         throw new ResponderException("Cannot serialize object");
@@ -200,15 +213,17 @@ class JsonResponder implements Responsable
     /**
      * Build response object
      * 
-     * @param  array  $data 
+     * @param  mixed  $data 
      * @param  array  $headers
      * 
      * @return JsonResponse
      */
-    protected function buildResponse(array $data, array $headers = [], $options = 0)
+    protected function buildResponse($data, array $headers = [], $options = 0)
     {   
         $headers = array_merge($headers, $this->headers);
 
-        return new JsonResponse($data, $this->statusCode, $headers, $options);
+        return $data instanceof Resource
+            ? $data
+            : new JsonResponse($data, $this->statusCode, $headers, $options);
     }
 }
