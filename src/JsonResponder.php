@@ -102,7 +102,7 @@ class JsonResponder implements Responsable
         }
 
         try {
-            $payload = call_user_func_array($this->handler, [$this->action, $request]);
+            $payload = call_user_func_array($this->handler, [$request, $this->action]);
         }
         catch (Exception $e) {
             // We'll assume that if an Exception has an error code 

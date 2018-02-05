@@ -19,11 +19,29 @@ class ResponderFactory
         $this->request = $request;
     }
 
-    public function json($action = null) : Responsable
+    public function json($action = null)
     {
         $this->setupAction($action);
 
         return new JsonResponder($action);
+    }
+
+    public function action($action, callable $handler = null)
+    {
+        $this->setupAction($action);
+
+        $responder = new JsonResponder($action);
+
+        return $handler
+            ? $responder->handle($handler)
+            : $responder;
+    }
+
+    public function handle(callable $handler)
+    {
+        $responder = new JsonResponder();
+
+        return $responder->handle($handler);
     }
 
     protected function setupAction($action = null)

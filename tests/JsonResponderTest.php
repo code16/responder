@@ -11,10 +11,52 @@ use Code16\Responder\Tests\Stubs\PlanetNotFoundException;
 class JsonResponderTest extends ResponderTestCase
 {
     /** @test */
+    function it_can_use_a_handler_without_an_action_class()
+    {
+        $this->router()->get('/', function() {
+            return $this->responder()->handle(function() {
+                return [
+                    'id' => "1",
+                    'name' => "John Smith",
+                ];
+            });
+        });
+
+        $response = $this->get('/');
+        $response->assertStatus(200);
+        $response->assertJson([
+            'data' => [
+                'id' => "1",
+                'name' => "John Smith",
+            ],
+        ]);
+    }
+
+    /** @test */
+    function it_passes_the_request_object_to_the_handler_as_first_argument()
+    {
+        $this->router()->get('/', function() {
+            return $this->responder()->handle(function($request) {
+                return [
+                    'param' => $request->get('param'),
+                ];
+            });
+        });
+
+        $response = $this->get('/?param=test');
+        $response->assertStatus(200);
+        $response->assertJson([
+            'data' => [
+                'param' => 'test'
+            ],
+        ]);
+    }
+
+    /** @test */
     function it_can_respond_a_singular_resource_when_returning_an_arrayable_item_from_an_action()
     {
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use($id) {
                 return $action->execute($id);
             });
         });
@@ -43,7 +85,7 @@ class JsonResponderTest extends ResponderTestCase
         });
 
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use($id) {
                 return $action->execute($id);
             });
         });
@@ -56,7 +98,7 @@ class JsonResponderTest extends ResponderTestCase
     function it_can_respond_a_plural_resource()
     {
         $this->router()->get('planets', function(ListPlanets $listPlanet) {
-            return $this->responder()->json($listPlanet)->handle(function($action) {
+            return $this->responder()->action($listPlanet, function($request, $action) {
                 return $action->execute();
             });
         });
@@ -72,7 +114,7 @@ class JsonResponderTest extends ResponderTestCase
     function it_returns_a_paginated_json_response_when_page_is_set_on_query_string()
     {
         $this->router()->get('planets', function(ListPlanets $listPlanet) {
-            return $this->responder()->json($listPlanet)->handle(function($action) {
+            return $this->responder()->action($listPlanet, function($request, $action) {
                 return $action->execute();
             });
         });
@@ -103,7 +145,7 @@ class JsonResponderTest extends ResponderTestCase
         });
 
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use($id) {
                 return $action->execute($id);
             });
         });
@@ -137,7 +179,7 @@ class JsonResponderTest extends ResponderTestCase
         });
 
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use($id) {
                 return $action->execute($id);
             });
         });
@@ -150,7 +192,7 @@ class JsonResponderTest extends ResponderTestCase
     function it_uses_a_custom_transformer_object_if_provided()
     {
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use($id) {
                 return $action->execute($id);
             })->setTransformer(new PlanetTransformer);
         });
@@ -168,7 +210,7 @@ class JsonResponderTest extends ResponderTestCase
     function it_uses_a_custom_transformer_on_a_collection_if_provided()
     {
         $this->router()->get('planets', function(ListPlanets $listPlanet) {
-            return $this->responder()->json($listPlanet)->handle(function($action) {
+            return $this->responder()->action($listPlanet, function($request, $action) {
                 return $action->execute();
             })->setTransformer(new PlanetTransformer);
         });
@@ -182,7 +224,7 @@ class JsonResponderTest extends ResponderTestCase
     function it_uses_a_custom_transformer_on_a_paginator_if_provided()
     {
         $this->router()->get('planets', function(ListPlanets $listPlanet) {
-            return $this->responder()->json($listPlanet)->handle(function($action) {
+            return $this->responder()->action($listPlanet, function($request, $action) {
                 return $action->execute();
             })->setTransformer(new PlanetTransformer);
         });
@@ -196,7 +238,7 @@ class JsonResponderTest extends ResponderTestCase
     function it_returns_a_custom_http_status_code_if_provided()
     {
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use($id) {
                 return $action->execute($id);
             })->setTransformer(new PlanetTransformer)->setStatusCode(201);
         });
@@ -221,7 +263,7 @@ class JsonResponderTest extends ResponderTestCase
         });
 
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use ($id) {
                 return $action->execute($id);
             });
         });
@@ -242,7 +284,7 @@ class JsonResponderTest extends ResponderTestCase
         });
 
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use($id) {
                 return $action->execute($id);
             });
         });
@@ -267,7 +309,7 @@ class JsonResponderTest extends ResponderTestCase
         });
 
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use($id) {
                 return $action->execute($id);
             })->setStatusCode(207);
         });
@@ -292,7 +334,7 @@ class JsonResponderTest extends ResponderTestCase
         });
 
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
-            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+            return $this->responder()->action($showPlanet, function($request, $action) use($id) {
                 return $action->execute($id);
             });
         });
