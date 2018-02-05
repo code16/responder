@@ -1,4 +1,4 @@
-language: php
+slanguage: php
 sudo: trues
 php:
   - 7.0
