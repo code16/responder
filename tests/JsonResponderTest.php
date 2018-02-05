@@ -2,6 +2,7 @@
 
 namespace Code16\Responder\Tests;
 
+use Responder;
 use Code16\Responder\Tests\Stubs\Actions\ShowPlanet;
 use Code16\Responder\Tests\Stubs\Actions\ListPlanets;
 use Code16\Responder\Tests\Stubs\Planet;
@@ -343,6 +344,28 @@ class JsonResponderTest extends ResponderTestCase
         $response->assertStatus(200);
         $response->assertJson([
             'data' => 'OK',
+        ]);
+    }
+
+    /** @test */
+    function we_can_use_the_facade()
+    {
+        $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
+            return Responder::action($showPlanet, function($request, $action) use($id) {
+                return $action->execute($id);
+            });
+        });
+
+        $response = $this->get('/planet/1234');
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'data' => [
+                'id',
+                'name',
+                'mass',
+                'distance',
+                'discovered_at',
+            ],
         ]);
     }
 }

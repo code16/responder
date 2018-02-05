@@ -30,5 +30,15 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "extra": {
+        "laravel": {
+          "providers": [
+              "Code16\\Responder\\ResponderServiceProvider"
+          ],
+          "aliases": {
+            "Responder": "Code16\\Responder\\Facade"
+          }
+      }
+    }
 }

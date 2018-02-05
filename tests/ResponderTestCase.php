@@ -16,4 +16,16 @@ abstract class ResponderTestCase extends TestCase
     {
         return $this->app->make(ResponderFactory::class);
     }
+
+    protected function getPackageProviders($app)
+    {
+        return ['Code16\Responder\ResponderServiceProvider'];
+    }
+
+    protected function getPackageAliases($app)
+    {
+        return [
+            'Responder' => 'Code16\Responder\Responder'
+        ];
+    }
 }
