@@ -5,6 +5,8 @@ namespace Code16\Responder\Tests;
 use Code16\Responder\Tests\Stubs\Actions\ShowPlanet;
 use Code16\Responder\Tests\Stubs\Actions\ListPlanets;
 use Code16\Responder\Tests\Stubs\Planet;
+use Code16\Responder\Tests\Stubs\PlanetTransformer;
+use Code16\Responder\Tests\Stubs\PlanetNotFoundException;
 
 class JsonResponderTest extends ResponderTestCase
 {
@@ -76,45 +78,201 @@ class JsonResponderTest extends ResponderTestCase
         });
         $response = $this->withoutExceptionHandling()->get('/planets?page=2', ['Accept' => 'application/json']);
         $response->assertStatus(200);
-        //dd($response->decodeResponseJson());
+        //
+        //dd(json_decode($response->getContent()));
         $response->assertJsonStructure([
             'data',
+            'meta',
+            'links',
         ]);
     }
 
     /** @test */
-    function it_catches_exceptions_and_throw_error_with_http_error_code()
+    function it_catches_exceptions_and_throw_errors_with_correct_http_status_code()
     {
-        $this->markTestIncomplete();
+        $this->app->bind(ShowPlanet::class, function($app) {
+            return new class extends ShowPlanet {
+                public function __construct()
+                {}
+
+                public function execute($id)
+                {
+                    throw new PlanetNotFoundException("Planet does not exists");
+                }
+            };
+        });
+
+        $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
+            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+                return $action->execute($id);
+            });
+        });
+
+        $response = $this->get('/planet/1234');
+        $response->assertStatus(404);
+        $response->assertJson([
+            "errors" => [
+                [
+                    "status" => 404,
+                    "title" => "PlanetNotFoundException",
+                    "detail" => "Planet does not exists",
+                ],
+            ],
+        ]);
     }
 
     /** @test */
     function it_throws_exceptions_when_no_error_code_is_set()
     {
-        $this->markTestIncomplete();
-    }
+       $this->app->bind(ShowPlanet::class, function($app) {
+            return new class extends ShowPlanet {
+                public function __construct()
+                {}
 
-    /** @test */
-    function it_returns_an_illuminate_resource_objects_by_default()
-    {
-        $this->markTestIncomplete();
+                public function execute($id)
+                {
+                    throw new \Exception("Something unexpected happened");
+                }
+            };
+        });
+
+        $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
+            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+                return $action->execute($id);
+            });
+        });
+
+        $response = $this->get('/planet/1234');
+        $response->assertStatus(500);
     }
 
     /** @test */
     function it_uses_a_custom_transformer_object_if_provided()
     {
-        $this->markTestIncomplete();
+        $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
+            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+                return $action->execute($id);
+            })->setTransformer(new PlanetTransformer);
+        });
+
+        $response = $this->get('/planet/1234');
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'data' => [
+                'extra',
+            ],
+        ]);
     }
 
     /** @test */
     function it_returns_a_custom_http_status_code_if_provided()
     {
-        $this->markTestIncomplete();
+        $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
+            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+                return $action->execute($id);
+            })->setTransformer(new PlanetTransformer)->setStatusCode(201);
+        });
+
+        $response = $this->get('/planet/1234');
+        $response->assertStatus(201);
     }
 
     /** @test */
-    function it_respond_with_pagination_metadata_if_a_paginator_is_return()
+    function it_responds_with_a_default_204_on_null_or_boolean_response()
     {
-        $this->markTestIncomplete();
+        $this->app->bind(ShowPlanet::class, function($app) {
+            return new class extends ShowPlanet {
+                public function __construct()
+                {}
+
+                public function execute($id)
+                {
+                    return null;
+                }
+            };
+        });
+
+        $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
+            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+                return $action->execute($id);
+            });
+        });
+
+        $response = $this->get('/planet/1234');
+        $response->assertStatus(204);
+
+         $this->app->bind(ShowPlanet::class, function($app) {
+            return new class extends ShowPlanet {
+                public function __construct()
+                {}
+
+                public function execute($id)
+                {
+                    return true;
+                }
+            };
+        });
+
+        $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
+            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+                return $action->execute($id);
+            });
+        });
+
+        $response = $this->get('/planet/1234');
+        $response->assertStatus(204);
+    }
+
+    /** @test */
+    function user_can_customise_empty_response_coee()
+    {
+        $this->app->bind(ShowPlanet::class, function($app) {
+            return new class extends ShowPlanet {
+                public function __construct()
+                {}
+
+                public function execute($id)
+                {
+                    return null;
+                }
+            };
+        });
+
+        $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
+            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+                return $action->execute($id);
+            })->setStatusCode(207);
+        });
+
+        $response = $this->get('/planet/1234');
+        $response->assertStatus(207);
+    }
+
+    /** @test */
+    function it_handles_string_response()
+    {
+        $this->app->bind(ShowPlanet::class, function($app) {
+            return new class extends ShowPlanet {
+                public function __construct()
+                {}
+
+                public function execute($id)
+                {
+                    return "OK";
+                }
+            };
+        });
+
+        $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {
+            return $this->responder()->json($showPlanet)->handle(function($action) use($id) {
+                return $action->execute($id);
+            });
+        });
+
+        $response = $this->get('/planet/1234');
+        $response->assertStatus(200);
+        $response->assertJson([
+            'data' => 'OK',
+        ]);
     }
 }

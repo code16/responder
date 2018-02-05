@@ -11,9 +11,9 @@ use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\Resource;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Collection;
-use Code16\Responder\ArrayWrapper;
 
 class JsonResponder implements Responsable
 {
@@ -36,7 +36,7 @@ class JsonResponder implements Responsable
      * 
      * @var int
      */
-    protected $statusCode = 200;
+    protected $statusCode;
     
     /**
      * Action object
@@ -115,14 +115,32 @@ class JsonResponder implements Responsable
                 throw $e;
             }
             
-            return $this->setStatusCode($code)->respondWithError($e->getMessage());
+            return $this->setStatusCode($code)->respondWithError($e->getMessage(), class_basename($e));
         }   
         
         return $this->handlePayload($payload);
     }
 
+    /**
+     * Route payload to the corresponding JsonResponse builder 
+     * 
+     * @param  mixed $payload 
+     * @return JsonResponse
+     */
     protected function handlePayload($payload)
     {
+        if(is_null($payload)) {
+            return $this->buildEmptyResponse();
+        }
+
+        if(is_bool($payload)) {
+            return $this->buildEmptyResponse();
+        }
+
+        if(is_string($payload)) {
+            return $this->buildStringResponse($payload);
+        }
+
         return $payload instanceof Resource ? $this->buildResponse($payload) : $this->buildResponse($this->intoResource($payload));
     }
 
@@ -148,15 +166,17 @@ class JsonResponder implements Responsable
     {
         // Transformer are intended to singular resources,
         // so what to do with collections
-        if ($this->transformer !== null) {
-            return $this->transformer->transform($payload);
+        if ($this->transformer != null) {
+            $payload = $this->transformer->transform($payload);
         }
 
         if($payload instanceof Collection || $payload instanceof AbstractPaginator) {
-            return new Resource($payload);
+            return new ResourceCollection($payload);
         }
 
         if($payload instanceof Arrayable) {
+            //$resource = new Resource($payload);
+            //dd($resource->toResponse($this->request));
             return new Resource($payload);
         }
         
@@ -178,12 +198,15 @@ class JsonResponder implements Responsable
      *
      * @return mixed
      */
-    protected function respondWithError(string $message)
+    protected function respondWithError(string $message, string $title)
     {
         return $this->buildResponse([
-            'error' => [
-                'message' => $message,
-                'code' => $this->getStatusCode(),
+            'errors' => [
+                [
+                    'detail' => $message,
+                    'status' => $this->getStatusCode(),
+                    'title' => $title,
+                ],
             ],
         ]);
     }
@@ -201,13 +224,13 @@ class JsonResponder implements Responsable
     }
 
     /**
-     * Return HTTP status code
+     * Return explictit HTTP status code if set, or 200 by default
      * 
      * @return integer
      */
     public function getStatusCode() : int
     {
-        return $this->statusCode;
+        return $this->statusCode ? $this->statusCode : 200;
     }
     
     /**
@@ -221,9 +244,54 @@ class JsonResponder implements Responsable
     protected function buildResponse($data, array $headers = [], $options = 0)
     {   
         $headers = array_merge($headers, $this->headers);
+        
+        $response = $data instanceof Resource
+            ? $data->toResponse($this->request)
+            : new JsonResponse($data, $this->getStatusCode(), $headers, $options);
 
-        return $data instanceof Resource
-            ? $data
-            : new JsonResponse($data, $this->statusCode, $headers, $options);
+        $response->setStatusCode($this->getStatusCode());
+
+        return $response;
+    }
+
+    /**
+     * Build an empty response
+     * 
+     * @param  array   $headers
+     * @param  integer $options
+     * @return JsonResponse
+     */
+    protected function buildEmptyResponse(array $headers = [], $options = 0)
+    {
+        $headers = array_merge($headers, $this->headers);
+
+        $statusCode = $this->statusCode ? 
+            $this->statusCode : 
+            204;
+
+        $response = new JsonResponse([], $statusCode, $headers, $options);
+
+        return $response;
+    }
+
+     /**
+     * Build an empty response
+     * 
+     * @param  string  $content
+     * @param  array   $headers
+     * @param  integer $options
+     * @return JsonResponse
+     */
+    protected function buildStringResponse(string $content, array $headers = [], $options = 0)
+    {
+        $headers = array_merge($headers, $this->headers);
+
+        $data = [
+            'data' => $content,
+        ];
+
+        $response = new JsonResponse($data, $this->getStatusCode(), $headers, $options);
+
+        return $response;
     }
 }

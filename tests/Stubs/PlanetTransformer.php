@@ -12,6 +12,7 @@ class PlanetTransformer
             "mass" => $planet->mass,
             "distance" => $planet->distance,
             "discovered_at" => $planet->discovered_at->toIso8601String(),
+            "extra" => "extra",
         ];
     }
 }
