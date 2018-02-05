@@ -165,6 +165,34 @@ class JsonResponderTest extends ResponderTestCase
     }
 
     /** @test */
+    function it_uses_a_custom_transformer_on_a_collection_if_provided()
+    {
+        $this->router()->get('planets', function(ListPlanets $listPlanet) {
+            return $this->responder()->json($listPlanet)->handle(function($action) {
+                return $action->execute();
+            })->setTransformer(new PlanetTransformer);
+        });
+        $response = $this->get('/planets');
+        $response->assertStatus(200);
+        $content = json_decode($response->getContent(), true);
+        $this->assertTrue(array_key_exists("extra", $content['data'][0]));
+    }
+
+    /** @test */
+    function it_uses_a_custom_transformer_on_a_paginator_if_provided()
+    {
+        $this->router()->get('planets', function(ListPlanets $listPlanet) {
+            return $this->responder()->json($listPlanet)->handle(function($action) {
+                return $action->execute();
+            })->setTransformer(new PlanetTransformer);
+        });
+        $response = $this->withoutExceptionHandling()->get('/planets?page=2', ['Accept' => 'application/json']);
+        $response->assertStatus(200);
+        $content = json_decode($response->getContent(), true);
+        $this->assertTrue(array_key_exists("extra", $content['data'][0]));
+    }
+
+    /** @test */
     function it_returns_a_custom_http_status_code_if_provided()
     {
         $this->router()->get('planet/{id}', function($id, ShowPlanet $showPlanet) {

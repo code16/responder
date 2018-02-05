@@ -167,7 +167,7 @@ class JsonResponder implements Responsable
         // Transformer are intended to singular resources,
         // so what to do with collections
         if ($this->transformer != null) {
-            $payload = $this->transformer->transform($payload);
+            $payload = $this->transformPayload($payload);
         }
 
         if($payload instanceof Collection || $payload instanceof AbstractPaginator) {
@@ -175,8 +175,6 @@ class JsonResponder implements Responsable
         }
 
         if($payload instanceof Arrayable) {
-            //$resource = new Resource($payload);
-            //dd($resource->toResponse($this->request));
             return new Resource($payload);
         }
         
@@ -189,6 +187,41 @@ class JsonResponder implements Responsable
         }
 
         throw new ResponderException("Cannot serialize object");
+    }
+
+    /**
+     * Transform payload(s) into an array using custom transformer
+     * 
+     * @param  mixed $payload
+     * @return array|collection
+     */
+    protected function transformPayload($payload)
+    {
+        if($payload instanceof Collection) {
+            return $this->transformCollectionPayload($payload);
+        }
+
+        if($payload instanceof AbstractPaginator) {
+            return $this->transformPaginatorPayload($payload);
+        }
+            
+        return $this->transformer->transform($payload);
+    }
+
+    protected function transformCollectionPayload($payload)
+    {
+        return $payload->map(function($item) {
+            return new ArrayWrapper($this->transformer->transform($item));
+        });
+    }
+
+    protected function transformPaginatorPayload($payload)
+    {
+        $payload = $payload->setCollection($payload->getCollection()->map(function($item) {
+            return new ArrayWrapper($this->transformer->transform($item));
+        }));
+
+        return $payload;
     }
 
     /**
@@ -244,7 +277,7 @@ class JsonResponder implements Responsable
     protected function buildResponse($data, array $headers = [], $options = 0)
     {   
         $headers = array_merge($headers, $this->headers);
-        
+
         $response = $data instanceof Resource
             ? $data->toResponse($this->request)
             : new JsonResponse($data, $this->getStatusCode(), $headers, $options);
