@@ -10,7 +10,7 @@ use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\Resource;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Collection;
@@ -141,7 +141,7 @@ class JsonResponder implements Responsable
             return $this->buildStringResponse($payload);
         }
 
-        return $payload instanceof Resource ? $this->buildResponse($payload) : $this->buildResponse($this->intoResource($payload));
+        return $payload instanceof JsonResource ? $this->buildResponse($payload) : $this->buildResponse($this->intoResource($payload));
     }
 
     /**
@@ -162,7 +162,7 @@ class JsonResponder implements Responsable
      * @param  mixed $payload
      * @return Illuminate\Http\Json\Resource
      */
-    protected function intoResource($payload) : Resource
+    protected function intoResource($payload)
     {
         // Transformer are intended to singular resources,
         // so what to do with collections
@@ -175,15 +175,15 @@ class JsonResponder implements Responsable
         }
 
         if($payload instanceof Arrayable) {
-            return new Resource($payload);
+            return new JsonResource($payload);
         }
         
         if(is_array($payload)) {
-            return new Resource(new ArrayWrapper($payload));
+            return new JsonResource(new ArrayWrapper($payload));
         }
         
         if($payload instanceof JsonSerialize) {
-            return new Resource($payload);
+            return new JsonResource($payload);
         }
 
         throw new ResponderException("Cannot serialize object");
@@ -278,7 +278,7 @@ class JsonResponder implements Responsable
     {   
         $headers = array_merge($headers, $this->headers);
 
-        $response = $data instanceof Resource
+        $response = $data instanceof JsonResource
             ? $data->toResponse($this->request)
             : new JsonResponse($data, $this->getStatusCode(), $headers, $options);
 
