@@ -14,6 +14,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 class JsonResponder implements Responsable
 {
@@ -117,6 +118,9 @@ class JsonResponder implements Responsable
             
             return $this->setStatusCode($code)->respondWithError($e->getMessage(), class_basename($e));
         }   
+        catch (ValidationException $e) {
+            throw $e;
+        }
         
         return $this->handlePayload($payload);
     }

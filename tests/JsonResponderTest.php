@@ -5,6 +5,8 @@ namespace Code16\Responder\Tests;
 use Responder;
 use Code16\Responder\Tests\Stubs\Actions\ShowPlanet;
 use Code16\Responder\Tests\Stubs\Actions\ListPlanets;
+use Code16\Responder\Tests\Stubs\Actions\CreatePlanet;
+use Code16\Responder\Tests\Stubs\Actions\ValidateRequest;
 use Code16\Responder\Tests\Stubs\Planet;
 use Code16\Responder\Tests\Stubs\PlanetTransformer;
 use Code16\Responder\Tests\Stubs\PlanetNotFoundException;
@@ -365,6 +367,30 @@ class JsonResponderTest extends ResponderTestCase
                 'mass',
                 'distance',
                 'discovered_at',
+            ],
+        ]);
+    }
+
+    /** @test */
+    function it_passes_validation_exceptions_to_exception_handler()
+    {
+        $this->router()->post('planet', function(CreatePlanet $createPlanet) {
+            return Responder::action($createPlanet, function($request, $action) {
+                return $action->execute($request);
+            });
+        });
+
+        $data = [
+            'name' => 'toto23',
+        ];
+
+        $response = $this->json('post', '/planet', $data);
+        $response->assertStatus(422);
+         $response->assertJsonStructure([
+            'message',
+            'errors' => [
+                'mass',
+                'distance',
             ],
         ]);
     }
