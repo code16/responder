@@ -10,7 +10,6 @@ use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\Resource;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
@@ -159,7 +158,7 @@ class JsonResponder implements Responsable
      */
     protected function isIlluminateResource($payload)
     {
-        return $payload instanceof Resource || $payload instanceof JsonResource;
+        return $payload instanceof JsonResource;
     }
 
     /**
@@ -208,14 +207,13 @@ class JsonResponder implements Responsable
     }
 
     /**
-     * Return 
-     * @return [type] [description]
+     * Return new Json Resource
+     * 
+     * @return JsonResource
      */
     protected function instantiateJsonResource($payload)
     {
-        return class_exists(JsonResource::class)
-            ? new JsonResource($payload)
-            : new Resource($payload);
+        return new JsonResource($payload);
     }
 
     /**

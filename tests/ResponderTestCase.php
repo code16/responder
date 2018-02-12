@@ -7,11 +7,11 @@ use Code16\Responder\ResponderFactory;
 
 abstract class ResponderTestCase extends TestCase
 {
-    /*public function setUp()
+    public function setUp()
     {
         parent::setUp();
-        $this->withoutExceptionHandling();
-    }*/
+        //$this->withoutExceptionHandling();
+    }
 
     protected function router()
     {
