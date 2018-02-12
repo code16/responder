@@ -7,6 +7,12 @@ use Code16\Responder\ResponderFactory;
 
 abstract class ResponderTestCase extends TestCase
 {
+    /*public function setUp()
+    {
+        parent::setUp();
+        $this->withoutExceptionHandling();
+    }*/
+
     protected function router()
     {
         return $this->app->make('router');

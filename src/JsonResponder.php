@@ -10,6 +10,7 @@ use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\Resource;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
@@ -121,7 +122,7 @@ class JsonResponder implements Responsable
         catch (ValidationException $e) {
             throw $e;
         }
-        
+
         return $this->handlePayload($payload);
     }
 
@@ -145,7 +146,20 @@ class JsonResponder implements Responsable
             return $this->buildStringResponse($payload);
         }
 
-        return $payload instanceof JsonResource ? $this->buildResponse($payload) : $this->buildResponse($this->intoResource($payload));
+        return $this->isIlluminateResource($payload)
+            ? $this->buildResponse($payload) 
+            : $this->buildResponse($this->intoResource($payload));
+    }
+
+    /**
+     * Return true if resource is an instance of an Illuminate resource
+     * 
+     * @param  mixed $payload
+     * @return boolean       
+     */
+    protected function isIlluminateResource($payload)
+    {
+        return $payload instanceof Resource || $payload instanceof JsonResource;
     }
 
     /**
@@ -179,18 +193,29 @@ class JsonResponder implements Responsable
         }
 
         if($payload instanceof Arrayable) {
-            return new JsonResource($payload);
+            return $this->instantiateJsonResource($payload);
         }
         
         if(is_array($payload)) {
-            return new JsonResource(new ArrayWrapper($payload));
+            return $this->instantiateJsonResource(new ArrayWrapper($payload));
         }
         
         if($payload instanceof JsonSerialize) {
-            return new JsonResource($payload);
+            return $this->instantiateJsonResource($payload);
         }
 
         throw new ResponderException("Cannot serialize object");
+    }
+
+    /**
+     * Return 
+     * @return [type] [description]
+     */
+    protected function instantiateJsonResource($payload)
+    {
+        return class_exists(JsonResource::class)
+            ? new JsonResource($payload)
+            : new Resource($payload);
     }
 
     /**

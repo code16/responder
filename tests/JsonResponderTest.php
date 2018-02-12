@@ -372,7 +372,7 @@ class JsonResponderTest extends ResponderTestCase
     }
 
     /** @test */
-    function it_passes_validation_exceptions_to_exception_handler()
+    function it_passthrough_validation_exceptions_to_exception_handler()
     {
         $this->router()->post('planet', function(CreatePlanet $createPlanet) {
             return Responder::action($createPlanet, function($request, $action) {
@@ -386,12 +386,13 @@ class JsonResponderTest extends ResponderTestCase
 
         $response = $this->json('post', '/planet', $data);
         $response->assertStatus(422);
-         $response->assertJsonStructure([
+        $response->assertJsonStructure([
             'message',
             'errors' => [
                 'mass',
                 'distance',
             ],
         ]);
+
     }
 }
