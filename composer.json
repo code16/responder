@@ -37,7 +37,7 @@
               "Code16\\Responder\\ResponderServiceProvider"
           ],
           "aliases": {
-            "Responder": "Code16\\Responder\\Facade"
+            "Responder": "Code16\\Responder\\Responder"
           }
       }
     }
