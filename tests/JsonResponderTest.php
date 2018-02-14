@@ -10,6 +10,8 @@ use Code16\Responder\Tests\Stubs\Actions\ValidateRequest;
 use Code16\Responder\Tests\Stubs\Planet;
 use Code16\Responder\Tests\Stubs\PlanetTransformer;
 use Code16\Responder\Tests\Stubs\PlanetNotFoundException;
+use Code16\Responder\Tests\Stubs\CustomValidationException;
+use Illuminate\Support\MessageBag;
 
 class JsonResponderTest extends ResponderTestCase
 {
@@ -394,5 +396,30 @@ class JsonResponderTest extends ResponderTestCase
             ],
         ]);
 
+    }
+
+    /** @test */
+    function it_convert_exceptions_carrying_message_bags()
+    {
+        $this->router()->post('planet', function(CreatePlanet $createPlanet) {
+            return Responder::action($createPlanet, function($request, $action) {
+                $messages = new MessageBag;
+                $messages->add("error1", "test1");
+                $messages->add("error2", "test2");
+                throw new CustomValidationException($messages);
+            });
+        });
+
+        $data = [];
+
+        $response = $this->json('post', '/planet', $data);
+        $response->assertStatus(422);
+        $response->assertJsonStructure([
+            'message',
+            'errors' => [
+                'error1',
+                'error2',
+            ],
+        ]);
     }
 }

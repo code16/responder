@@ -5,6 +5,7 @@ namespace Code16\Responder;
 use Exception;
 use JsonSerializable;
 use Code16\Responder\Exceptions\ResponderException;
+use Code16\Responder\Interfaces\HasMessageBag;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Responsable;
@@ -14,7 +15,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
+use Code16\Responder\Tests\Stubs\CustomValidationException;
 
 class JsonResponder implements Responsable
 {
@@ -116,7 +119,11 @@ class JsonResponder implements Responsable
                 throw $e;
             }
             
-            return $this->setStatusCode($code)->respondWithError($e->getMessage(), class_basename($e));
+            $this->setStatusCode($code);
+
+            return $e instanceof HasMessageBag 
+                ? $this->respondWithMessageBag($e->getMessageBag(), class_basename($e))
+                : $this->respondWithError($e->getMessage(), class_basename($e));
         }   
         catch (ValidationException $e) {
             throw $e;
@@ -268,6 +275,21 @@ class JsonResponder implements Responsable
                     'title' => $title,
                 ],
             ],
+        ]);
+    }
+
+    /**
+     * Respond with error message.
+     *
+     * @param $message
+     *
+     * @return mixed
+     */
+    protected function respondWithMessageBag(MessageBag $messageBag, string $title)
+    {
+        return $this->buildResponse([
+            'message' => $title,
+            'errors' => $messageBag->toArray(),
         ]);
     }
 
