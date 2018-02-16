@@ -10,7 +10,7 @@ abstract class ResponderTestCase extends TestCase
     public function setUp()
     {
         parent::setUp();
-        //$this->withoutExceptionHandling();
+        $this->withoutExceptionHandling();
     }
 
     protected function router()

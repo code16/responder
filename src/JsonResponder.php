@@ -195,7 +195,11 @@ class JsonResponder implements Responsable
         }
 
         if($payload instanceof Collection || $payload instanceof AbstractPaginator) {
-            return new ResourceCollection($payload);
+            return is_array($payload->first()) 
+                ?  new ResourceCollection($payload->map(function($item) {
+                    return new ArrayWrapper($item);
+                }))
+                : new ResourceCollection($payload);
         }
 
         if($payload instanceof Arrayable) {

@@ -422,4 +422,38 @@ class JsonResponderTest extends ResponderTestCase
             ],
         ]);
     }
+
+    /** @test */
+    function it_handles_collections_when_collection_items_are_arrays()
+    {
+        $this->router()->get('test', function(CreatePlanet $createPlanet) {
+            return Responder::action($createPlanet, function($request, $action) {
+                return collect([
+                    [
+                        'id' => 1,
+                        'label' => "A",
+                    ],
+                    [
+                        'id' => 2,
+                        'label' => "B",
+                    ],
+                ]);
+            });
+        });
+
+        $response = $this->json('get', '/test');
+        $response->assertStatus(200);
+        $response->assertJson([
+            'data' => [
+                [
+                    'id' => 1,
+                    'label' => "A",
+                ],
+                [
+                    'id' => 2,
+                    'label' => "B",
+                ],
+            ],
+        ]);
+    }
 }
