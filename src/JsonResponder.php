@@ -63,6 +63,13 @@ class JsonResponder implements Responsable
      */
     protected $request;
 
+    /**
+     * Additionnal handler parameters
+     * 
+     * @var array
+     */
+    protected $parameters = [];
+
     public function __construct($action = null)
     {
         $this->action = $action;
@@ -78,6 +85,18 @@ class JsonResponder implements Responsable
     public function handle(callable $handler)
     {
         $this->handler = $handler;
+        return $this;
+    }
+
+    /**
+     * Set additionnal parameters, mostly useful when called without
+     * a controller from a route macro. 
+     * 
+     * @param array $parameters
+     */
+    public function setParameters(array $parameters)
+    {
+        $this->parameters = $parameters;
         return $this;
     }
 
@@ -105,8 +124,13 @@ class JsonResponder implements Responsable
             throw new ErrorException("No handler set");
         }
 
+        $parameters = array_merge(
+            [$request, $this->action],
+            $this->parameters
+        );
+
         try {
-            $payload = call_user_func_array($this->handler, [$request, $this->action]);
+            $payload = call_user_func_array($this->handler, array_values($parameters));
         }
         catch (Exception $e) {
             // We'll assume that if an Exception has an error code 
