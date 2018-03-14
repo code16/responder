@@ -21,6 +21,16 @@ class ResponderServiceProvider extends ServiceProvider
         // Add route action macro
         $router = $this->app->make('router');
 
+        if(! $router->hasMacro('action')) {
+            $this->registerActionMacro();
+        }
+    }
+
+    protected function registerActionMacro()
+    {
+        // Add route action macro
+        $router = $this->app->make('router');
+
         $app = $this->app;
 
         $router->macro('action', function ($method, $url, $action, $callback, $transformer = null) use($router, $app) {
