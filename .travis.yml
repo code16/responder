@@ -18,3 +18,4 @@ script:
 
 env:
   - LARAVEL_VERSION=5.6.*
+  - LARAVEL_VERSION=5.7.*
