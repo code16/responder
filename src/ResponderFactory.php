@@ -2,10 +2,9 @@
 
 namespace Code16\Responder;
 
-use Illuminate\Http\Request;
-use Illuminate\Contracts\Support\Responsable;
-use InvalidArgumentException;
 use Code16\Responder\Interfaces\HasPagination;
+use Illuminate\Http\Request;
+use InvalidArgumentException;
 
 class ResponderFactory
 {
@@ -14,11 +13,18 @@ class ResponderFactory
      */
     protected $request;
 
+    /**
+     * @param Request $request
+     */
     public function __construct(Request $request)
     {
         $this->request = $request;
     }
 
+    /**
+     * @param null $action
+     * @return JsonResponder
+     */
     public function json($action = null)
     {
         $this->setupAction($action);
@@ -26,6 +32,11 @@ class ResponderFactory
         return new JsonResponder($action);
     }
 
+    /**
+     * @param $action
+     * @param callable|null $handler
+     * @return JsonResponder
+     */
     public function action($action, callable $handler = null)
     {
         $this->setupAction($action);
@@ -37,6 +48,10 @@ class ResponderFactory
             : $responder;
     }
 
+    /**
+     * @param callable $handler
+     * @return JsonResponder
+     */
     public function handle(callable $handler)
     {
         $responder = new JsonResponder();
@@ -44,6 +59,9 @@ class ResponderFactory
         return $responder->handle($handler);
     }
 
+    /**
+     * @param null $action
+     */
     protected function setupAction($action = null)
     {
         if(is_null($action)) {
@@ -59,6 +77,9 @@ class ResponderFactory
         }
     }
 
+    /**
+     * @param $action
+     */
     protected function setPagination($action)
     {
         if($this->request->has('page')) {

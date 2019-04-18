@@ -2,22 +2,18 @@
 
 namespace Code16\Responder;
 
-use Exception;
-use JsonSerializable;
 use Code16\Responder\Exceptions\ResponderException;
 use Code16\Responder\Interfaces\HasMessageBag;
+use Exception;
 use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\ValidationException;
-use Code16\Responder\Tests\Stubs\CustomValidationException;
 
 class JsonResponder implements Responsable
 {
@@ -64,12 +60,15 @@ class JsonResponder implements Responsable
     protected $request;
 
     /**
-     * Additionnal handler parameters
+     * Additional handler parameters
      * 
      * @var array
      */
     protected $parameters = [];
 
+    /**
+     * @param null $action
+     */
     public function __construct($action = null)
     {
         $this->action = $action;
@@ -89,10 +88,11 @@ class JsonResponder implements Responsable
     }
 
     /**
-     * Set additionnal parameters, mostly useful when called without
-     * a controller from a route macro. 
-     * 
+     * Set additional parameters, mostly useful when called without
+     * a controller from a route macro.
+     *
      * @param array $parameters
+     * @return JsonResponder
      */
     public function setParameters(array $parameters)
     {
@@ -113,10 +113,13 @@ class JsonResponder implements Responsable
     }
 
     /**
-     * Call the action and return the response as 
+     * Call the action and return the response as
      * a laravel resource
-     * 
+     *
+     * @param $request
      * @return Resource|JsonResponse
+     * @throws ValidationException
+     * @throws Exception
      */
     public function toResponse($request)
     {
@@ -134,12 +137,12 @@ class JsonResponder implements Responsable
         }
         catch (Exception $e) {
             // We'll assume that if an Exception has an error code 
-            // that is explicitely defined, we want to use it as an 
+            // that is explicitly defined, we want to use it as an
             // HTTP error code. if not we'll just let the 
             // Exception handler takes care of it. 
             $code = $e->getCode();
 
-            if ($code == 0 || ! $this->isValidHttpStatusCode($code)) {
+            if (! $this->isValidHttpStatusCode($code)) {
                 throw $e;
             }
             
@@ -157,10 +160,11 @@ class JsonResponder implements Responsable
     }
 
     /**
-     * Route payload to the corresponding JsonResponse builder 
-     * 
-     * @param  mixed $payload 
+     * Route payload to the corresponding JsonResponse builder
+     *
+     * @param mixed $payload
      * @return JsonResponse
+     * @throws ResponderException
      */
     protected function handlePayload($payload)
     {
@@ -195,20 +199,21 @@ class JsonResponder implements Responsable
     /**
      * Return true if the value is a valid HTTP response code
      *
-     * @param  int     $statusCode 
+     * @param int $statusCode
      * @return boolean             
      */
-    protected function isValidHttpStatusCode(int $statusCode) : bool
+    protected function isValidHttpStatusCode($statusCode)
     {
-        return $statusCode >= 100 && $statusCode < 600;
+        return is_int($statusCode) && $statusCode >= 100 && $statusCode < 600;
     }
 
     /**
-     * Use any available transformation method to process 
+     * Use any available transformation method to process
      * the payload returned by the handler.
-     * 
-     * @param  mixed $payload
-     * @return Illuminate\Http\Json\Resource
+     *
+     * @param mixed $payload
+     * @return JsonResource
+     * @throws ResponderException
      */
     protected function intoResource($payload)
     {
@@ -234,7 +239,7 @@ class JsonResponder implements Responsable
             return $this->instantiateJsonResource(new ArrayWrapper($payload));
         }
         
-        if($payload instanceof JsonSerialize) {
+        if($payload instanceof \JsonSerializable) {
             return $this->instantiateJsonResource($payload);
         }
 
@@ -243,7 +248,8 @@ class JsonResponder implements Responsable
 
     /**
      * Return new Json Resource
-     * 
+     *
+     * @param $payload
      * @return JsonResource
      */
     protected function instantiateJsonResource($payload)
@@ -289,11 +295,11 @@ class JsonResponder implements Responsable
     /**
      * Respond with error message.
      *
-     * @param $message
-     *
+     * @param string $message
+     * @param string $title
      * @return mixed
      */
-    protected function respondWithError(string $message, string $title)
+    protected function respondWithError($message, $title)
     {
         return $this->buildResponse([
             'errors' => [
@@ -309,11 +315,11 @@ class JsonResponder implements Responsable
     /**
      * Respond with error message.
      *
-     * @param $message
-     *
+     * @param MessageBag $messageBag
+     * @param string $title
      * @return mixed
      */
-    protected function respondWithMessageBag(MessageBag $messageBag, string $title)
+    protected function respondWithMessageBag($messageBag, $title)
     {
         return $this->buildResponse([
             'message' => $title,
@@ -327,31 +333,32 @@ class JsonResponder implements Responsable
      * @param int $code
      * @return static
      */
-    public function setStatusCode(int $code)
+    public function setStatusCode($code)
     {
         $this->statusCode = $code;
+
         return $this;
     }
 
     /**
-     * Return explictit HTTP status code if set, or 200 by default
+     * Return explicit HTTP status code if set, or 200 by default
      * 
      * @return integer
      */
-    public function getStatusCode() : int
+    public function getStatusCode()
     {
-        return $this->statusCode ? $this->statusCode : 200;
+        return $this->statusCode ?: 200;
     }
-    
+
     /**
      * Build response object
-     * 
-     * @param  mixed  $data 
-     * @param  array  $headers
-     * 
+     *
+     * @param mixed $data
+     * @param array $headers
+     * @param int $options
      * @return JsonResponse
      */
-    protected function buildResponse($data, array $headers = [], $options = 0)
+    protected function buildResponse($data, $headers = [], $options = 0)
     {   
         $headers = array_merge($headers, $this->headers);
 
@@ -371,7 +378,7 @@ class JsonResponder implements Responsable
      * @param  integer $options
      * @return JsonResponse
      */
-    protected function buildEmptyResponse(array $headers = [], $options = 0)
+    protected function buildEmptyResponse($headers = [], $options = 0)
     {
         $headers = array_merge($headers, $this->headers);
 
@@ -392,7 +399,7 @@ class JsonResponder implements Responsable
      * @param  integer $options
      * @return JsonResponse
      */
-    protected function buildStringResponse(string $content, array $headers = [], $options = 0)
+    protected function buildStringResponse($content, $headers = [], $options = 0)
     {
         $headers = array_merge($headers, $this->headers);
 
