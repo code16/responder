@@ -7,7 +7,7 @@ use Code16\Responder\ResponderFactory;
 
 abstract class ResponderTestCase extends TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         //$this->withoutExceptionHandling();
