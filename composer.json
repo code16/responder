@@ -9,9 +9,9 @@
         }
     ],
     "require": {
-        "illuminate/support": "5.6.*|5.7.*|5.8.*",
-        "illuminate/http": "5.6.*|5.7.*|5.8.*",
-        "illuminate/contracts": "5.6.*|5.7.*|5.8.*"
+        "illuminate/support": "5.8.*",
+        "illuminate/http": "5.8.*",
+        "illuminate/contracts": "5.8.*"
     },
     "require-dev": {
         "orchestra/testbench": "3.8.*",
