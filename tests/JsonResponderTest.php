@@ -6,7 +6,6 @@ use Responder;
 use Code16\Responder\Tests\Stubs\Actions\ShowPlanet;
 use Code16\Responder\Tests\Stubs\Actions\ListPlanets;
 use Code16\Responder\Tests\Stubs\Actions\CreatePlanet;
-use Code16\Responder\Tests\Stubs\Actions\ValidateRequest;
 use Code16\Responder\Tests\Stubs\Planet;
 use Code16\Responder\Tests\Stubs\PlanetTransformer;
 use Code16\Responder\Tests\Stubs\PlanetNotFoundException;

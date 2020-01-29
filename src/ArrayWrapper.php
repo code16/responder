@@ -2,9 +2,10 @@
 
 namespace Code16\Responder;
 
+use ArrayAccess;
 use Illuminate\Contracts\Support\Arrayable;
 
-class ArrayWrapper implements Arrayable
+class ArrayWrapper implements ArrayAccess, Arrayable
 {
     protected $data;
 
@@ -17,4 +18,25 @@ class ArrayWrapper implements Arrayable
     {
         return $this->data;
     }
+
+    function offsetExists($offset)
+    {
+        return isset($this->data[$offset]);
+    }
+
+    function offsetGet($offset)
+    {
+        return $this->data[$offset];
+    }
+
+    function offsetSet($offset, $value)
+    {
+        $this->data[$offset] = $value;
+    }
+
+    function offsetUnset($offset)
+    {
+        unset($this->data[$offset]);
+    }
+
 }

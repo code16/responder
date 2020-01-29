@@ -9,12 +9,12 @@
         }
     ],
     "require": {
-        "illuminate/support": "5.8.*",
-        "illuminate/http": "5.8.*",
-        "illuminate/contracts": "5.8.*"
+        "illuminate/support": "5.8.*|^6.0",
+        "illuminate/http": "5.8.*|^6.0",
+        "illuminate/contracts": "5.8.*|^6.0"
     },
     "require-dev": {
-        "orchestra/testbench": "3.8.*",
+        "orchestra/testbench": "3.8.*|4.*",
         "fzaninotto/faker": "~1.4",
         "ramsey/uuid": "^3.7"
     },
